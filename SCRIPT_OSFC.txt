@@ -1,0 +1,138 @@
+[motivating opening story]
+
+Good morning. It’s an honor to be invited here for osfc. It looks like we are getting started.
+
+In 1996, the Ariane 5 rocket launched. The flight contol software was working to keep the rocket orientation vertical and manage the horizontal velocity.
+37 seconds into flight, an unsafe conversion of this 64 bit float to a 16 bit signed integer overflows and causes a hardware fault on **both** of the redundant inertial navigation systems. This hardware failure quickly cascades errors, leading the rocket to veer off course and self destruct.
+
+In other words ...
+
+Luckily aviation companies have learned from this incident and provably avoid overflow, right?
+Oh you have to restart your plane every 51 days, and it's only potentially catastrophic.
+
+The bad news is that firmware has gone everywhere since the 1990s.
+
+There is software **controlling your car, 
+
+your heart, 
+
+and your brain**. And these all have wireless access, and can be hacked.
+
+If firmware isn't reliable, then everything else above us on the software stack is compromised.
+
+---
+
+My name is Samir Rashid and I am going to describe how the Tock operating system eliminates many bugs that plague other OSes at compile time 
+and how we are mitigating logic bugs in Tock OS using lightweight formal verification.
+
+Before we see how Tock OS is safe, we need to understand our threat model. What kinds of bugs do systems face that we want to protect Tock from?
+
+If you look at the types of bugs in Linux, you will see two things. Most bugs are located in drivers and most to do with memory. Different types of bugs are not equally distributed, 
+so protecting ourselves from some kinds of bugs actually prevents the vast majority of failures.
+
+Let's try and classify these bugs. 
+there are many ways to introduce UB in C
+race conditions, deadlock
+semantic - programmer has a misunderstanding
+
+We have a spectrum of bugs that range in difficulty to fix.
+Let's look at how Tock works to mitigate all these threats.
+
+---
+
+First I will give an overview of Tock OS and its design, then I will share our work applying formal verification to Tock.
+
+- Tock is an OS for low-power embedded devices
+- and enforces isolation and safety between processes. 
+- Tock is used as a research platform in many universities...
+- Tock is a general purpose OS, but Some main use cases are as an OS for connected IoT devices or as a root of trust
+- Tock is used in industry by Google and Microsoft and runs in millions of consumer devices. You will find Tock inside every modern chromebook's security processor and Tock powers Microsoft's new pluton OS
+- Tock also underpins important open source projects like opensk and opentitan
+
+Processes
+MPU, any lang, load+restart
+- stack will grow towards MPU boundary, preventing process data corruption. A real issue on these severely memory constrained devices
+
+Capsules
+Capsules are written in safe Rust and are compiled with the kernel, so you can choose which capsules to trust.
+
+Capsules dont have full access to kernel functions. There is a privilege system of capabilities are enforced through the type system.
+Basically this means that a capsule that wants to do something privileged such as having control over the network, then it is given a type that says you can use the network at compile time. Then in order to call network functions it provides that type. This means that if a capsule tries to do something illegal, it will fail at compile time.
+
+- move almost all memory and CPU overhead of security checks to compile-time
+
+- static memory: gets memory from grant region of each process
+
+* buggy userspace drivers cannot compromise system *integrity* as they are isolated from the rest of the kernel
+
+Kernel
+Lastly below these is the kernel. Processes and capsules are compartmentalized, but we do care a lot about the correctness of the kernel.
+The kernel is only a few thousand lines, so this pushes complexity to drivers. The kernel is written in Rust and Rust enforces memory safety for the system.
+Uses unsafe Rust, but fundamentally abstractions over hardware need to be unsafe and trusted. do need to trust hardware drivers
+
+Secure by design
+Rust is great, we have now eliminated memory and implicit undefined behavior.
+
+Next, Tocks' architecture compartmentalizes the tiers you need to trust drivers, bypasses concurrency problems as it is not concurrent. Things run to completion.
+
+using safe Rust and disallowing external dependencies reduces Tock's attack surface, but bugs can always get through even the most scrutinized open source projects and now projects need to deal with the reality that there could be highly resourced attackers who want to exploit their project, such as what happened to xz.
+
+---
+90% of patches to linux memory allocation code are bugfixes, code maintenance, and optimizations.  10% are new features
+
+If you look at bugs which have been fixed in the Linux kernel, they last on average about two years from introduction to fix.
+These bugs are extremely hard to find and are waiting years in the kernel to be exploited.
+
+---
+We want our programs to be “correct” and have certain properties - not leaking sensitive data, or is crash safe.
+
+I am going to be showing a tool called Flux. Flux is under active development and allows you to refine variables in Rust.
+
+So we have this funciton to do absolute value.
+Flux is modular, so if we want to express some properties about this function, then it is just like adding a type signature to this function.
+
+What does it mean for halve to be correct?
+
+//       Precondition      Postcondition
+#[sig(fn(x: i32{x > 0}) -> i32{v: v < x})]
+pub fn halve(x: i32) -> i32 {
+    x / 2
+}
+
+fn main() {
+    halve(5);
+    halve(-1);
+}
+
+precondition, postcondition 
+Subset of the parent type
+- so this means you can think of this as JUST TYPE CHECKING
+you can express whatever contraints you want
+
+#[flux::sig(fn(x: i32{x != i32::MIN}) -> i32{v: v >= 0 && v >= x})]
+fn abs(x: i32) -> i32 {
+  if x >= 0 {
+    x
+  } else {
+    -x
+  }
+}
+
+
+Flux is built on liquid types, which is a form of refinement types.
+
+Another interesting use case is you could refine your own datastructures to prevent out of bounds indexing or redundant checks on function inputs.
+
+---
+
+Let's take a look at one of the most serious bugs in Tock. Often bugs are hard because something isn't working as expected and in order to find the bug, you first have to imagine it.
+
+
+TODO: we are still working on the formal model, but this is the high level for how you would apply liquid types to abstract properties.
+Our work is going to show stronger constraints such as only exactly the memory a process has access to is accessible. And you can also refine the OS' view of the hardware to match the spec. So this means that you can guarantee that it is not possible for the OS to set some kind of bad state that is against the arm or riscv spec. 
+
+I am going to go over the high level idea of how you would go about this and also show what it is like to develop with Flux.
+
+
+
+This means you can reduce trust on the kernel and rely on the specification of the flux annotations to maintain memory isolation.

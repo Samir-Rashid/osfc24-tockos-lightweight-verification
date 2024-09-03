@@ -1,0 +1,10 @@
+{
+    "markdown.marp.enableHtml": true,
+    "markdown.marp.exportType": "html",
+  "rust-analyzer.check.overrideCommand": [
+    "/home/mod/.cargo/bin/cargo-flux",
+    "/home/mod/.cargo/bin/rustc-flux",
+    "--workspace",
+    "--message-format=json-diagnostic-rendered-ansi"
+  ],
+}

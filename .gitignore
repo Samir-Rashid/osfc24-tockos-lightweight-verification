@@ -1,0 +1,6 @@
+*.pdf
+*.html
+*.zip
+*.txt
+!SCRIPT_OSFC.txt
+script.md

@@ -1,0 +1,10 @@
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flux-rs = { git = "https://github.com/flux-rs/flux" }
+
+[package.metadata.flux]
+enabled = true

@@ -1,0 +1,9 @@
+{
+  "rust-analyzer.check.overrideCommand": [
+    "cargo",
+    "flux",
+    "--workspace",
+    "--message-format=json-diagnostic-rendered-ansi"
+  ]
+}
+
