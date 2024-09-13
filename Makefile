@@ -1,5 +1,3 @@
 all:
-	marp --engine engine.js --html slides\ copy.md
-	firefox slides\ copy.html
-
-# --allow-local-files
+	marp --engine engine.js --html slides.md --allow-local-files
+	firefox slides.html

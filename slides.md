@@ -521,7 +521,7 @@ If you look at bugs which have been fixed in the Linux kernel, they last on aver
 
 ## **here are all the rumors you have heard**
 
-- "it is so slow" -> **takes seconds**
+- "It is so slow" -> **takes seconds**
 - "I don't want to rewrite my code" -> **incrementally retrofit existing code**
 - "You need a PhD in formal methods first" -> **actually it's easy!**
 

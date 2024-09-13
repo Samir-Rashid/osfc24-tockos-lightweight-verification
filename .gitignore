@@ -4,3 +4,4 @@
 *.txt
 !SCRIPT_OSFC.txt
 script.md
+!slides.pdf
